@@ -77,8 +77,8 @@ CYGPATH(PX4_BINARY_DIR PX4_BINARY_DIR_CYG)
 
 target_link_libraries(nuttx_arch
 	INTERFACE
-		drivers_board
 		drivers_arch
+		drivers_board
 		drivers_boards_common
 		drivers_boards_common_arch
 )
@@ -91,15 +91,13 @@ target_link_libraries(${FW_NAME} PRIVATE
 	-nodefaultlibs
 	-nostdlib
 
-	-fno-exceptions
-	-fno-rtti
-
 	-Wl,--script=${PX4_BINARY_DIR_CYG}/NuttX/nuttx/configs/${BOARD}/scripts/${LD_SCRIPT}
 	-Wl,-Map=${CONFIG}.map
 	-Wl,--warn-common
 	-Wl,--gc-sections
 
 	-Wl,--start-group
+	drivers_boards_common_arch
 	${nuttx_libs}
 	-Wl,--end-group
 
@@ -123,7 +121,7 @@ set(fw_file ${PX4_BINARY_DIR}/${fw_name_short})
 string(REPLACE ".elf" ".px4" fw_file ${fw_file})
 
 add_custom_command(OUTPUT ${PX4_BINARY_DIR_REL}/${BOARD}.bin
-	COMMAND ${OBJCOPY} -O binary ${PX4_BINARY_DIR_REL}/${FW_NAME} ${PX4_BINARY_DIR_REL}/${BOARD}.bin
+	COMMAND ${CMAKE_OBJCOPY} -O binary ${PX4_BINARY_DIR_REL}/${FW_NAME} ${PX4_BINARY_DIR_REL}/${BOARD}.bin
 	DEPENDS ${FW_NAME}
 	)
 
