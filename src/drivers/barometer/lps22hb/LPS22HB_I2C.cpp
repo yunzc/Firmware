@@ -32,95 +32,67 @@
  ****************************************************************************/
 
 /**
- * @file LPS25H_SPI.cpp
+ * @file lps22hb_i2c.cpp
  *
- * SPI interface for LPS25H
+ * I2C interface for lps22hb
  */
 
-/* XXX trim includes */
+#include "LPS22HB.hpp"
+
+#include <cstring>
+
 #include <px4_config.h>
 
-#include <sys/types.h>
-#include <stdint.h>
-#include <stdbool.h>
-#include <string.h>
-#include <assert.h>
-#include <debug.h>
-#include <errno.h>
-#include <unistd.h>
-
-#include <arch/board/board.h>
-
-#include <drivers/device/spi.h>
-#include <drivers/drv_mag.h>
+#include <drivers/device/i2c.h>
 #include <drivers/drv_device.h>
 
-#include "lps25h.h"
-#include <board_config.h>
+#include "board_config.h"
 
-#ifdef PX4_SPIDEV_HMC
+#define LPS22HB_ADDRESS		0x5D
 
-/* SPI protocol address bits */
-#define DIR_READ			(1<<7)
-#define DIR_WRITE			(0<<7)
+device::Device *LPS22HB_I2C_interface(int bus);
 
-#define HMC_MAX_SEND_LEN		4
-#define HMC_MAX_RCV_LEN			8
-
-device::Device *LPS25H_SPI_interface(int bus);
-
-class LPS25H_SPI : public device::SPI
+class LPS22HB_I2C : public device::I2C
 {
 public:
-	LPS25H_SPI(int bus, uint32_t device);
-	virtual ~LPS25H_SPI();
+	LPS22HB_I2C(int bus);
+	virtual ~LPS22HB_I2C() = default;
 
-	virtual int	init();
 	virtual int	read(unsigned address, void *data, unsigned count);
 	virtual int	write(unsigned address, void *data, unsigned count);
 
-	virtual int	ioctl(unsigned operation, unsigned &arg);
+protected:
+	virtual int	probe();
 
 };
 
 device::Device *
-LPS25H_SPI_interface(int bus)
+LPS22HB_I2C_interface(int bus)
 {
-	return new LPS25H_SPI(bus, PX4_SPIDEV_HMC);
+	return new LPS22HB_I2C(bus);
 }
 
-LPS25H_SPI::LPS25H_SPI(int bus, uint32_t device) :
-	SPI("LPS25H_SPI", nullptr, bus, device, SPIDEV_MODE3, 11 * 1000 * 1000 /* will be rounded to 10.4 MHz */)
-{
-	_device_id.devid_s.devtype = DRV_MAG_DEVTYPE_LPS25H;
-}
-
-LPS25H_SPI::~LPS25H_SPI()
+LPS22HB_I2C::LPS22HB_I2C(int bus) :
+	I2C("LPS22HB_I2C", nullptr, bus, LPS22HB_ADDRESS, 400000)
 {
 }
 
 int
-LPS25H_SPI::init()
+LPS22HB_I2C::probe()
 {
-	int ret;
-
-	ret = SPI::init();
-
-	if (ret != OK) {
-		DEVICE_DEBUG("SPI init failed");
-		return -EIO;
-	}
-
-	// read WHO_AM_I value
 	uint8_t id;
 
-	if (read(ADDR_ID, &id, 1)) {
+	_retries = 10;
+
+	if (read(WHO_AM_I, &id, 1)) {
 		DEVICE_DEBUG("read_reg fail");
 		return -EIO;
 	}
 
-	if (id != ID_WHO_AM_I) {
-		DEVICE_DEBUG("ID byte mismatch (%02x != %02x)", ID_WHO_AM_I, id);
+	_retries = 2;
+
+	if (id != LPS22HB_ID_WHO_AM_I) {
+		DEVICE_DEBUG("ID byte mismatch (%02x != %02x)", LPS22HB_ID_WHO_AM_I, id);
 		return -EIO;
 	}
 
@@ -128,25 +100,7 @@ LPS25H_SPI::init()
 }
 
 int
-LPS25H_SPI::ioctl(unsigned operation, unsigned &arg)
-{
-	int ret;
-
-	switch (operation) {
-
-	case DEVIOCGDEVICEID:
-		return CDev::ioctl(nullptr, operation, arg);
-
-	default: {
-			ret = -EINVAL;
-		}
-	}
-
-	return ret;
-}
-
-int
-LPS25H_SPI::write(unsigned address, void *data, unsigned count)
+LPS22HB_I2C::write(unsigned address, void *data, unsigned count)
 {
 	uint8_t buf[32];
 
@@ -154,26 +108,15 @@ LPS25H_SPI::write(unsigned address, void *data, unsigned count)
 		return -EIO;
 	}
 
-	buf[0] = address | DIR_WRITE;
+	buf[0] = address;
 	memcpy(&buf[1], data, count);
 
-	return transfer(&buf[0], &buf[0], count + 1);
+	return transfer(&buf[0], count + 1, nullptr, 0);
 }
 
 int
-LPS25H_SPI::read(unsigned address, void *data, unsigned count)
+LPS22HB_I2C::read(unsigned address, void *data, unsigned count)
 {
-	uint8_t buf[32];
-
-	if (sizeof(buf) < (count + 1)) {
-		return -EIO;
-	}
-
-	buf[0] = address | DIR_READ;
-
-	int ret = transfer(&buf[0], &buf[0], count + 1);
-	memcpy(data, &buf[1], count);
-	return ret;
+	uint8_t cmd = address;
+	return transfer(&cmd, 1, (uint8_t *)data, count);
 }
-
-#endif /* PX4_SPIDEV_HMC */
