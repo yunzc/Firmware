@@ -204,4 +204,4 @@ PARAM_DEFINE_FLOAT(MOT_SLEW_MAX, 0.0f);
  * @reboot_required true
  * @group System
  */
-PARAM_DEFINE_INT32(SYS_FMU_TASK, 0);
+PARAM_DEFINE_INT32(SYS_FMU_TASK, 1);
