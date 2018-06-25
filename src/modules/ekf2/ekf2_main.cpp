@@ -1233,6 +1233,7 @@ void Ekf2::run()
 		estimator_status_s status;
 		status.timestamp = now;
 		_ekf.get_state_delayed(status.states);
+		status.n_states = 24;
 		_ekf.get_covariances(status.covariances);
 		_ekf.get_gps_check_status(&status.gps_check_fail_flags);
 		_ekf.get_control_mode(&status.control_mode_flags);
@@ -1245,9 +1246,10 @@ void Ekf2::run()
 		_ekf.get_ekf_soln_status(&status.solution_status_flags);
 		_ekf.get_imu_vibe_metrics(status.vibe);
 		status.time_slip = _last_time_slip_us / 1e6f;
-		status.health_flags = 0.0f; // unused
-		status.timeout_flags = 0.0f; // unused
 		status.pre_flt_fail = _preflt_fail;
+
+		status.health_flags = 0; // unused
+		status.timeout_flags = 0; // unused
 
 		if (_estimator_status_pub == nullptr) {
 			_estimator_status_pub = orb_advertise(ORB_ID(estimator_status), &status);
