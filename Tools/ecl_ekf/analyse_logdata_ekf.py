@@ -7,7 +7,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 
-def analyse_ekf(estimator_status, ekf2_innovations, sensor_preflight, check_levels,
+def analyse_ekf(estimator_status, ekf2_innovations, sensor_preflight, vehicle_local_position, check_levels,
                 plot=False, output_plot_filename=None, late_start_early_ending=True):
 
     if plot:
@@ -34,6 +34,7 @@ def analyse_ekf(estimator_status, ekf2_innovations, sensor_preflight, check_leve
     # generate max, min and 1-std metadata
     innov_time = 1e-6 * ekf2_innovations['timestamp']
     status_time = 1e-6 * estimator_status['timestamp']
+    local_pos_time = 1e-6 * vehicle_local_position['timestamp']
 
     if plot:
         # vertical velocity and position innovations
@@ -833,8 +834,8 @@ def analyse_ekf(estimator_status, ekf2_innovations, sensor_preflight, check_leve
         # filter reported accuracy
         plt.figure(13, figsize=(20, 13))
         plt.title('Reported Accuracy')
-        plt.plot(status_time, estimator_status['pos_horiz_accuracy'], 'b', label='horizontal')
-        plt.plot(status_time, estimator_status['pos_vert_accuracy'], 'r', label='vertical')
+        plt.plot(local_pos_time, vehicle_local_position['eph'], 'b', label='horizontal')
+        plt.plot(local_pos_time, vehicle_local_position['epv'], 'r', label='vertical')
         plt.ylabel('accuracy (m)')
         plt.xlabel('time (sec')
         plt.legend(loc='upper right')

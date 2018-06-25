@@ -2071,6 +2071,8 @@ private:
 	MavlinkOrbSubscription *_est_sub;
 	uint64_t _est_time;
 
+	MavlinkOrbSubscription *_lpos_sub;
+
 	/* do not allow top copying this class */
 	MavlinkStreamEstimatorStatus(MavlinkStreamEstimatorStatus &) = delete;
 	MavlinkStreamEstimatorStatus &operator = (const MavlinkStreamEstimatorStatus &) = delete;
@@ -2078,7 +2080,8 @@ private:
 protected:
 	explicit MavlinkStreamEstimatorStatus(Mavlink *mavlink) : MavlinkStream(mavlink),
 		_est_sub(_mavlink->add_orb_subscription(ORB_ID(estimator_status))),
-		_est_time(0)
+		_est_time(0),
+		_lpos_sub(_mavlink->add_orb_subscription(ORB_ID(vehicle_local_position)))
 	{}
 
 	bool send(const hrt_abstime t)
@@ -2086,6 +2089,10 @@ protected:
 		estimator_status_s est;
 
 		if (_est_sub->update(&_est_time, &est)) {
+
+			vehicle_local_position_s lpos = {};
+			_lpos_sub->update(&lpos);
+
 			// ESTIMATOR_STATUS
 			mavlink_estimator_status_t est_msg = {};
 			est_msg.time_usec = est.timestamp;
@@ -2095,8 +2102,8 @@ protected:
 			est_msg.mag_ratio = est.mag_test_ratio;
 			est_msg.hagl_ratio = est.hagl_test_ratio;
 			est_msg.tas_ratio = est.tas_test_ratio;
-			est_msg.pos_horiz_accuracy = est.pos_horiz_accuracy;
-			est_msg.pos_vert_accuracy = est.pos_vert_accuracy;
+			est_msg.pos_horiz_accuracy = lpos.eph;
+			est_msg.pos_vert_accuracy = lpos.epv;
 			est_msg.flags = est.solution_status_flags;
 			mavlink_msg_estimator_status_send_struct(_mavlink->get_channel(), &est_msg);
 

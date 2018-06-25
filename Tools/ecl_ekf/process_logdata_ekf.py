@@ -40,10 +40,17 @@ for d in data:
     if d.name == 'estimator_status':
         estimator_status_data = d.data
         print('found estimator_status data')
+
 for d in data:
     if d.name == 'ekf2_innovations':
         ekf2_innovations_data = d.data
         print('found ekf2_innovation data')
+
+vehicle_local_position_data = {}
+for d in data:
+    if d.name == 'vehicle_local_position':
+        vehicle_local_position_data = d.data
+        print('found vehicle_local_position data')
 
 # extract data from sensor preflight check message
 sensor_preflight = {}
@@ -72,7 +79,7 @@ print('Using test criteria loaded from {:s}'.format(check_level_dict_filename))
 
 # perform the ekf analysis
 test_results = analyse_ekf(
-    estimator_status_data, ekf2_innovations_data, sensor_preflight_data,
+    estimator_status_data, ekf2_innovations_data, sensor_preflight_data, vehicle_local_position_data,
     check_levels, plot=not args.no_plots, output_plot_filename=args.filename + ".pdf")
 
 # print master test status to console

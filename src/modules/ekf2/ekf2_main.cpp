@@ -1242,8 +1242,6 @@ void Ekf2::run()
 						&status.hgt_test_ratio, &status.tas_test_ratio,
 						&status.hagl_test_ratio, &status.beta_test_ratio);
 
-		status.pos_horiz_accuracy = _vehicle_local_position_pub.get().eph;
-		status.pos_vert_accuracy = _vehicle_local_position_pub.get().epv;
 		_ekf.get_ekf_soln_status(&status.solution_status_flags);
 		_ekf.get_imu_vibe_metrics(status.vibe);
 		status.time_slip = _last_time_slip_us / 1e6f;
