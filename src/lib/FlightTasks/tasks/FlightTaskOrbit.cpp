@@ -47,14 +47,39 @@ FlightTaskOrbit::FlightTaskOrbit()
 
 bool FlightTaskOrbit::applyCommandParameters(const vehicle_command_s &command)
 {
-	const float &r = command.param3; // commanded radius
-	const float &v = command.param4; // commanded velocity
-
-	if (setRadius(r) && setVelocity(v)) {
-		return FlightTaskManualAltitudeSmooth::applyCommandParameters(command);
+	printf("APPLY PARAMETERS\n");
+	printf("Radius: %f\n", (double)command.param1);
+	printf("Velocity: %f\n", (double)command.param2);
+	printf("Yaw mode: %f\n", (double)command.param3);
+	printf("Empty: %f\n", (double)command.param4);
+	printf("X: %f\n", (double)command.param5);
+	printf("Y: %f\n", (double)command.param6);
+	printf("Z: %f\n", (double)command.param7);
+	// radius field
+	float r = _r;
+	bool clockwise = _v >= 0;
+	if(PX4_ISFINITE(command.param1)) {
+		r = fabsf(command.param1);
+		clockwise = r > 0;
 	}
 
-	return false;
+	// commanded velocity, take sign of radius
+	float v = _v;
+	if(PX4_ISFINITE(command.param2)) {
+		v = fabsf(command.param2) * (clockwise ? 1.f : -1.f);
+	}
+
+	// if(PX4_ISFINITE(command.param5) && PX4_ISFINITE(command.param6)) {
+	// 	_center(1) = command.param5;
+	// 	_center(2) = command.param6;
+	// }
+
+	// if(PX4_ISFINITE(command.param7)) {
+	// 	_position_setpoint(2) = command.param7;
+	// }
+
+	printf("WANT TO SET: %f %f\n", (double)r, (double)v);
+	return setRadius(r) && setVelocity(v);
 }
 
 bool FlightTaskOrbit::setRadius(const float r)
