@@ -1,0 +1,2 @@
+PX4PATH="/home/changyun/catkin_ws/src/Firmware"
+source ~/catkin_ws/src/Firmware/Tools/setup_gazebo.bash $PX4PATH $PX4PATH/build/posix_sitl_default
